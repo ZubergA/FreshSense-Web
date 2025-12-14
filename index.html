@@ -5,13 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FreshSense</title>
     <style>
-        /* --- CSS CANTIK --- */
         body { font-family: 'Segoe UI', sans-serif; background: #f0fdf4; display: flex; flex-direction: column; align-items: center; padding: 20px; min-height: 100vh; }
         .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; max-width: 450px; width: 100%; border: 1px solid #e2e8f0; }
         h1 { color: #16a34a; margin-top: 0; font-size: 1.8rem; }
         p.subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 20px; }
 
-        /* AREA DRAG & DROP (PENTING) */
         .drop-zone {
             width: 100%;
             height: 250px;
@@ -28,7 +26,6 @@
             overflow: hidden;
         }
 
-        /* Efek saat file ditarik ke atasnya */
         .drop-zone.drag-over {
             background: #dcfce7;
             border-color: #16a34a;
@@ -41,7 +38,6 @@
 
         img { width: 100%; height: 100%; object-fit: contain; display: none; position: absolute; z-index: 5; }
 
-        /* TOMBOL */
         button { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 20px; font-size: 16px; transition: 0.2s; }
         .btn-scan { background: #16a34a; color: white; box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.4); }
         .btn-scan:hover { background: #15803d; }
@@ -50,7 +46,6 @@
         .btn-reset { background: transparent; color: #64748b; margin-top: 10px; padding: 10px; font-size: 0.9rem; }
         .btn-reset:hover { color: #ef4444; }
 
-        /* HASIL */
         #result { margin-top: 25px; padding: 20px; border-radius: 12px; background: #f1f5f9; display: none; text-align: left; border-left: 5px solid #ccc; animation: fadeIn 0.5s; }
         @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
     </style>
@@ -59,7 +54,7 @@
 
     <div class="card">
         <h1>🍏 FreshSense</h1>
-        <p class="subtitle">AI Quality Control: Pisang, Tomat, Apel</p>
+        <p class="subtitle">AI Klasifikasi buah</p>
 
         <div class="drop-zone" id="dropArea">
             <input type="file" id="fileInput" accept="image/*" hidden>
@@ -85,12 +80,9 @@
     <script type="module">
         import { client } from "https://cdn.jsdelivr.net/npm/@gradio/client/+esm";
 
-        // ==========================================
-        // ✅ KONFIGURASI (JANGAN DIUBAH LAGI)
-        // ==========================================
+       
         const SPACE_NAME = "Zuberg/FreshSense"; 
         const API_ENDPOINT = "/predict_image"; 
-        // ==========================================
 
         const dropArea = document.getElementById('dropArea');
         const fileInput = document.getElementById('fileInput');
@@ -102,9 +94,7 @@
 
         let selectedFile = null;
 
-        // --- 1. LOGIKA DRAG & DROP ---
-
-        // Mencegah behavior default browser (membuka file di tab baru)
+        
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
             dropArea.addEventListener(eventName, preventDefaults, false);
         });
@@ -114,28 +104,23 @@
             e.stopPropagation();
         }
 
-        // Efek Visual saat file ditarik masuk (Highlight)
         ['dragenter', 'dragover'].forEach(eventName => {
             dropArea.addEventListener(eventName, () => dropArea.classList.add('drag-over'), false);
         });
 
-        // Hapus Efek saat file keluar
         ['dragleave', 'drop'].forEach(eventName => {
             dropArea.addEventListener(eventName, () => dropArea.classList.remove('drag-over'), false);
         });
 
-        // SAAT FILE DILEPAS (DROP)
         dropArea.addEventListener('drop', (e) => {
             const dt = e.dataTransfer;
             const files = dt.files;
             handleFiles(files[0]);
         });
 
-        // SAAT DIKLIK BIASA
         dropArea.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', (e) => handleFiles(e.target.files[0]));
 
-        // Fungsi Penanganan File (Preview)
         function handleFiles(file) {
             if (file && file.type.startsWith('image/')) {
                 selectedFile = file;
@@ -143,8 +128,8 @@
                 reader.onload = (e) => {
                     imagePreview.src = e.target.result;
                     imagePreview.style.display = 'block';
-                    placeholder.style.display = 'none'; // Sembunyikan teks
-                    resultDiv.style.display = 'none';   // Sembunyikan hasil lama
+                    placeholder.style.display = 'none';
+                    resultDiv.style.display = 'none';
                 }
                 reader.readAsDataURL(file);
             } else {
@@ -152,7 +137,6 @@
             }
         }
 
-        // --- 2. LOGIKA API (Sama seperti sebelumnya) ---
 
         scanBtn.addEventListener('click', async () => {
             if (!selectedFile) { alert("Masukkan foto dulu, Bang!"); return; }
@@ -162,11 +146,9 @@
             scanBtn.disabled = true;
 
             try {
-                // Konek ke Hugging Face
                 const app = await client(SPACE_NAME);
                 const result = await app.predict(API_ENDPOINT, [selectedFile]);
 
-                // Olah Data
                 const data = result.data;
                 const labelData = data[0].confidences ? data[0].confidences : data[0];
                 const saran = data[1];
@@ -182,12 +164,10 @@
                     bestConf = labelData[bestLabel];
                 }
 
-                // Tampilkan
                 document.getElementById('resLabel').innerText = bestLabel;
                 document.getElementById('resConf').innerText = (bestConf * 100).toFixed(1) + "%";
                 document.getElementById('resAdvice').innerHTML = saran.replace(/\n/g, "<br>"); // Ubah enter jadi <br>
 
-                // Warna Border Kiri
                 const resBox = document.getElementById('result');
                 if(bestLabel === 'Ripe' || bestLabel.includes('Matang')) resBox.style.borderLeftColor = '#22c55e'; // Hijau
                 else if(bestLabel === 'Overripe' || bestLabel.includes('Terlalu')) resBox.style.borderLeftColor = '#f59e0b'; // Kuning
@@ -204,16 +184,14 @@
             }
         });
 
-        // --- 3. TOMBOL RESET ---
         resetBtn.addEventListener('click', () => {
             selectedFile = null;
             fileInput.value = '';
             imagePreview.style.display = 'none';
-            placeholder.style.display = 'block'; // Munculkan teks lagi
+            placeholder.style.display = 'block';
             resultDiv.style.display = 'none';
         });
 
     </script>
 </body>
-
 </html>
